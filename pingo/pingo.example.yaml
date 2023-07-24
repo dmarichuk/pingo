@@ -1,0 +1,14 @@
+# example settings
+
+variables:
+  telegram_bot_token: 6316286182:AAEFy0Z70VL0_tI2Bp_f8kvp2Dh2a2lHiM0
+  telegram_chat_id: 344398719
+
+jobs:
+
+  dummy-service:
+    type: service-ping
+    endpoint: http://localhost:9000/ping
+    interval: 10s
+    on_failure:
+      - telegram-alert
