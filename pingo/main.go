@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"pingo/parser"
@@ -15,10 +16,12 @@ func main() {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	done := make(chan bool, 1)
-
-	for _, job := range jobs {
-		go job.RunJob()
+    
+    for i:=0; i < len(jobs); i++ {
+        log.Println("Current job", jobs[i].Name)
+        go jobs[i].RunJob()
 	}
+
 
 	go func() {
 		sig := <-sigs

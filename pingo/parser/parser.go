@@ -59,15 +59,35 @@ func ParseJob(name string, jobMap map[string]interface{}, vars *Variables) j.Job
 	if !hasType {
 		log.Fatalf("Job %s must include job type!", name)
 	}
+    job.Type = jobType.(string)
 
-	switch jobType {
+	switch job.Type {
 	case j.SERVICE_PING:
 		endpoint, hasEndpoint := jobMap["endpoint"]
 		if !hasEndpoint {
 			log.Fatalf("Job %s must include endpoint!", name)
 		}
-		job.Type = jobType.(string)
 		job.Endpoint = endpoint.(string)
+    case j.RAM_USAGE:
+        ramThreshold, hasRamThreshold:= jobMap["threshold"]
+		if !hasRamThreshold{
+			log.Fatalf("Job %s must include threshold!", name)
+		}
+        job.RamThreshold = ramThreshold.(float64) 
+        if ok := IsFloatInLimits(job.RamThreshold, 0, 1); !ok {
+			log.Fatalf("Job %s threshold must be in range of 0 an 1!", name)
+        }
+    case j.DISK_USAGE:
+        diskThreshold, hasDiskThreshold:= jobMap["threshold"]
+		if !hasDiskThreshold{
+			log.Fatalf("Job %s must include threshold!", name)
+		}
+        job.DiskThreshold = diskThreshold.(float64)
+        diskPath, hasDiskPath := jobMap["path"]
+		if !hasDiskPath{
+			log.Fatalf("Job %s must include path!", name)
+		}
+        job.DiskPath = diskPath.(string)
 	default:
 		log.Fatalf("Unknown job type %s", jobType)
 	}

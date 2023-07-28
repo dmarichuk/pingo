@@ -12,3 +12,18 @@ jobs:
     interval: 10s
     on_failure:
       - telegram-alert
+
+  memory-check:
+    type: ram-usage
+    threshold: 0.0001
+    interval: 10s
+    on_failure:
+      - telegram-alert
+
+  disk-check:
+    type: disk-usage
+    threshold: 0.0001
+    interval: 10s
+    path: /
+    on_failure:
+      - telegram-alert
