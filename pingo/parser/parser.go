@@ -6,6 +6,8 @@ import (
 	"os"
 	j "pingo/job"
 	"pingo/taskHandlers"
+	"reflect"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v2"
@@ -32,7 +34,9 @@ type Config struct {
 }
 
 func (c *Config) Parse() []j.Job {
-	jobs := make([]j.Job, len(c.Jobs))
+    c.Variables.PostParse()
+	
+    jobs := make([]j.Job, len(c.Jobs))
 	idx := 0
 	for k, v := range c.Jobs {
 		jobs[idx] = ParseJob(k, v, &c.Variables)
@@ -41,6 +45,30 @@ func (c *Config) Parse() []j.Job {
 	return jobs
 
 }
+
+func (vars *Variables) PostParse() {
+    v := reflect.ValueOf(vars)
+    fmt.Printf("HERE %T %v\n", v, v)
+    prefix, suffix := "${{", "}}"
+    for i:=0;i < v.Elem().NumField(); i++ {
+        currentValue := v.Elem().Field(i).Interface().(string)
+        fmt.Println("currentValue", currentValue)
+        if strings.HasPrefix(currentValue, prefix) && strings.HasSuffix(currentValue, suffix) {
+            fmt.Println("HERE parse ${{}}")
+            buffer, _ := strings.CutPrefix(currentValue, prefix)
+            buffer, _ = strings.CutSuffix(buffer, suffix)
+            if envVar := os.Getenv(buffer); envVar != "" {
+                fmt.Println("PARSED", envVar)
+                v.Elem().Field(i).Set(reflect.ValueOf(envVar))
+
+            } else {
+                log.Fatalf("Unable to get variable %s from enviroment", buffer)
+            }
+        }
+    }
+    log.Printf("%v", vars)
+}
+
 
 func ParseJob(name string, jobMap map[string]interface{}, vars *Variables) j.Job {
 	job := j.Job{Name: name}
@@ -122,3 +150,4 @@ func ParseTasks(rawTasks []interface{}, job *j.Job, vars *Variables) []j.Task {
 	}
 	return tasks
 }
+

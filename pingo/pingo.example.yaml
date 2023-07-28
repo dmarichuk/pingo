@@ -2,7 +2,7 @@
 
 variables:
   telegram_bot_token: 6316286182:AAEFy0Z70VL0_tI2Bp_f8kvp2Dh2a2lHiM0
-  telegram_chat_id: 344398719
+  telegram_chat_id: ${{TELEGRAM_CHAT_ID}} # 344398719
 
 jobs:
 
