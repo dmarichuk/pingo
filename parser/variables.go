@@ -1,10 +1,10 @@
 package parser
 
 import (
-    "strings"
-    "reflect"
-    "os"
-    "log"
+	"log"
+	"os"
+	"reflect"
+	"strings"
 )
 
 type Variables struct {
@@ -13,21 +13,21 @@ type Variables struct {
 }
 
 func (vars *Variables) PostParse() {
-    // Check if there are any ${{...}} enviroment variables
-    v := reflect.ValueOf(vars)
-    prefix, suffix := "${{", "}}"
-    for i:=0; i < v.Elem().NumField(); i++ {
-        currentValue := v.Elem().Field(i).Interface().(string)
-        if strings.HasPrefix(currentValue, prefix) && strings.HasSuffix(currentValue, suffix) {
-            buffer, _ := strings.CutPrefix(currentValue, prefix)
-            buffer, _ = strings.CutSuffix(buffer, suffix)
-            if envVar := os.Getenv(buffer); envVar != "" {
-                v.Elem().Field(i).Set(reflect.ValueOf(envVar))
-            } else {
-                log.Fatalf("Unable to get variable %s from enviroment", buffer)
-            }
-        }
-    }
+	// Check if there are any ${{...}} enviroment variables
+	v := reflect.ValueOf(vars)
+	prefix, suffix := "${{", "}}"
+	for i := 0; i < v.Elem().NumField(); i++ {
+		currentValue := v.Elem().Field(i).Interface().(string)
+		if strings.HasPrefix(currentValue, prefix) && strings.HasSuffix(currentValue, suffix) {
+			buffer, _ := strings.CutPrefix(currentValue, prefix)
+			buffer, _ = strings.CutSuffix(buffer, suffix)
+			if envVar := os.Getenv(buffer); envVar != "" {
+				v.Elem().Field(i).Set(reflect.ValueOf(envVar))
+			} else {
+				log.Fatalf("Unable to get variable %s from enviroment", buffer)
+			}
+		}
+	}
 }
 
 func (v *Variables) IsValidForTelegram() bool {

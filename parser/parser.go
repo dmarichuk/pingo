@@ -19,7 +19,7 @@ type Config struct {
 }
 
 func (c *Config) ReadFromFile(path string) {
-	f, err := os.ReadFile(path) 
+	f, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatalf("Failed to read config: %s", err)
 	}
@@ -31,9 +31,9 @@ func (c *Config) ReadFromFile(path string) {
 }
 
 func (c *Config) Parse() []j.Job {
-    c.Variables.PostParse()
-	
-    jobs := make([]j.Job, len(c.Jobs))
+	c.Variables.PostParse()
+
+	jobs := make([]j.Job, len(c.Jobs))
 	idx := 0
 	for k, v := range c.Jobs {
 		jobs[idx] = ParseJob(k, v, &c.Variables)
@@ -60,7 +60,7 @@ func ParseJob(name string, jobMap map[string]interface{}, vars *Variables) j.Job
 	if !hasType {
 		log.Fatalf("Job %s must include job type!", name)
 	}
-    job.Type = jobType.(string)
+	job.Type = jobType.(string)
 
 	switch job.Type {
 	case j.SERVICE_PING:
@@ -69,26 +69,26 @@ func ParseJob(name string, jobMap map[string]interface{}, vars *Variables) j.Job
 			log.Fatalf("Job %s must include endpoint!", name)
 		}
 		job.Endpoint = endpoint.(string)
-    case j.RAM_USAGE:
-        ramThreshold, hasRamThreshold:= jobMap["threshold"]
-		if !hasRamThreshold{
+	case j.RAM_USAGE:
+		ramThreshold, hasRamThreshold := jobMap["threshold"]
+		if !hasRamThreshold {
 			log.Fatalf("Job %s must include threshold!", name)
 		}
-        job.RamThreshold = ramThreshold.(float64) 
-        if ok := IsFloatInLimits(job.RamThreshold, 0, 1); !ok {
+		job.RamThreshold = ramThreshold.(float64)
+		if ok := IsFloatInLimits(job.RamThreshold, 0, 1); !ok {
 			log.Fatalf("Job %s threshold must be in range of 0 an 1!", name)
-        }
-    case j.DISK_USAGE:
-        diskThreshold, hasDiskThreshold:= jobMap["threshold"]
-		if !hasDiskThreshold{
+		}
+	case j.DISK_USAGE:
+		diskThreshold, hasDiskThreshold := jobMap["threshold"]
+		if !hasDiskThreshold {
 			log.Fatalf("Job %s must include threshold!", name)
 		}
-        job.DiskThreshold = diskThreshold.(float64)
-        diskPath, hasDiskPath := jobMap["path"]
-		if !hasDiskPath{
+		job.DiskThreshold = diskThreshold.(float64)
+		diskPath, hasDiskPath := jobMap["path"]
+		if !hasDiskPath {
 			log.Fatalf("Job %s must include path!", name)
 		}
-        job.DiskPath = diskPath.(string)
+		job.DiskPath = diskPath.(string)
 	default:
 		log.Fatalf("Unknown job type %s", jobType)
 	}
@@ -100,11 +100,11 @@ func ParseJob(name string, jobMap map[string]interface{}, vars *Variables) j.Job
 
 	rawOnRecovery, hasOnRecovery := jobMap["on_recovery"]
 	if !hasOnRecovery {
-        rawOnRecovery = []interface{}{}
+		rawOnRecovery = []interface{}{}
 	}
 
 	job.OnFailure = ParseTasks(rawOnFailure.([]interface{}), &job, vars, j.ON_FAILURE)
-    job.OnRecovery = ParseTasks(rawOnRecovery.([]interface{}), &job, vars, j.ON_RECOVERY)
+	job.OnRecovery = ParseTasks(rawOnRecovery.([]interface{}), &job, vars, j.ON_RECOVERY)
 	return job
 }
 
@@ -117,19 +117,19 @@ func ParseTasks(rawTasks []interface{}, job *j.Job, vars *Variables, class strin
 			if ok := vars.IsValidForTelegram(); !ok {
 				log.Fatalf("Variables must include telegram_bot_token and telegram_chat_id!")
 			}
-            var message string
-            switch class {
-            case j.ON_FAILURE:
-                message = fmt.Sprintf("Job %s has failed", job.Name) 
-            case j.ON_RECOVERY:
-                message = fmt.Sprintf("Job %s has recovered", job.Name)
-            default:
-                log.Fatalf("Unknow Task class for job %s: %s", job.Name, class)
-            }
+			var message string
+			switch class {
+			case j.ON_FAILURE:
+				message = fmt.Sprintf("Job %s has failed", job.Name)
+			case j.ON_RECOVERY:
+				message = fmt.Sprintf("Job %s has recovered", job.Name)
+			default:
+				log.Fatalf("Unknow Task class for job %s: %s", job.Name, class)
+			}
 			tasks[idx] = task.NewTelegramTask(
 				vars.TelegramBotToken,
 				vars.TelegramChatID,
-                message,
+				message,
 			)
 		default:
 			log.Fatalf("Unknow task type in job %s: %s", job.Name, t)
@@ -137,4 +137,3 @@ func ParseTasks(rawTasks []interface{}, job *j.Job, vars *Variables, class strin
 	}
 	return tasks
 }
-

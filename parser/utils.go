@@ -15,5 +15,5 @@ func TransformISliceToStrSlice(in []interface{}) []string {
 }
 
 func IsFloatInLimits(target, low, high float64) bool {
-    return low < target  && target < high
+	return low < target && target < high
 }
