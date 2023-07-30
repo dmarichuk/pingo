@@ -1,29 +1,38 @@
 # example settings
 
-variables:
-  telegram_bot_token: 6316286182:AAEFy0Z70VL0_tI2Bp_f8kvp2Dh2a2lHiM0
-  telegram_chat_id: ${{TELEGRAM_CHAT_ID}} # 344398719
+# common variables for tasks
+# for now there are only variables for telegram, that are used within tasks
+variables: 
+  telegram_bot_token: ${{TELEGRAM_BOT_TOKEN}} # variables in ${{...}} are parsed from environment 
+  telegram_chat_id: 111111111
 
+# list of jobs
 jobs:
 
-  dummy-service:
-    type: service-ping
-    endpoint: http://localhost:9000/ping
+  an-important-service: # name of your job
+    type: service-ping # type of your job (now only service-ping, ram-usage and disk-usage are available)
+    endpoint: http://192.168.0.1:9000/ping # endpoint, that is going to be requested for healthcheck
+    interval: 10s # interval for a job. Expect string as for https://pkg.go.dev/time#ParseDuration 
+    on_failure: # tasks to execute on failures
+      - telegram-alert # send telegram message with bot token and chat from Variables
+    on_recovery: # tasks to execute on recovery (change job task from failed to success)
+      - telegram-alert
+
+  local-memory-check:
+    type: ram-usage # check current ram usage
+    threshold: 0.9 # threshold for failing - current ram usage / total ram usage
     interval: 10s
     on_failure:
       - telegram-alert
-
-  memory-check:
-    type: ram-usage
-    threshold: 0.0001
-    interval: 10s
-    on_failure:
+    on_recovery:
       - telegram-alert
 
-  disk-check:
+  local-disk-check:
     type: disk-usage
-    threshold: 0.0001
+    threshold: 0.8 # threshold for failing - current disk usage / total size
     interval: 10s
-    path: /
+    path: / # path for disk usage
     on_failure:
+      - telegram-alert
+    on_recovery:
       - telegram-alert

@@ -1,4 +1,4 @@
-package taskHandlers
+package task
 
 import (
 	"bytes"
@@ -28,7 +28,7 @@ func NewTelegramTask(token, chatID, alertMessage string) TelegramTask {
 	}
 }
 
-func (task TelegramTask) Run() {
+func (task TelegramTask) Launch() {
 	data := map[string]interface{}{
 		"chat_id": task.ChatID,
 		"text":    task.AlertMessage,

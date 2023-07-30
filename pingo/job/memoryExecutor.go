@@ -25,6 +25,6 @@ func (e *MemoryUsageExecutor) Exec(j *Job) bool {
         return false	
     }
     ratio := 1.0 - float64(e.info.Freeram) / float64(e.info.Totalram)
-	return ratio > e.Threshold
+	return ratio < e.Threshold
 }
 

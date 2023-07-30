@@ -14,6 +14,10 @@ const (
 
 	// task types
 	TELEGRAM_ALERT = "telegram-alert"
+    
+    // task classes
+    ON_FAILURE = "on_failure"
+    ON_RECOVERY = "on_recovery"
 
 	// job status
 	SUCCESS = "SUCCESS"
@@ -21,7 +25,7 @@ const (
 )
 
 type Task interface {
-	Run()
+	Launch()
 }
 
 type Executor interface {
@@ -33,6 +37,7 @@ type Job struct {
 	Type      string
 	Interval  time.Duration
 	OnFailure []Task
+    OnRecovery []Task
 	Status    string
 	TS        time.Time
 	PerfTime  time.Duration
@@ -48,7 +53,7 @@ type Job struct {
     DiskPath string
 }
 
-func (j *Job) RunJob() {
+func (j *Job) Run() {
     log.Printf("Launching %s job", j.Name)
 	e, err := j.GetExecutor()
 	if err != nil {
@@ -62,10 +67,15 @@ func (j *Job) RunJob() {
 		j.TS = time.Now()
 		if ok := e.Exec(j); !ok {
 			log.Printf("Job %s failed", j.Name)
+            if j.Status != FAILED { // Launch on Failure task only if Job was not failed previously
+                go j.LaunchTasks(ON_FAILURE)
+            }
 			j.Status = FAILED
-			go j.RunOnFailure()
 		} else {
 			log.Printf("Job %s succeed", j.Name)
+            if j.Status == FAILED { // Launch on Recovery task only if Job was failed previously
+                go j.LaunchTasks(ON_RECOVERY)
+            }
 			j.Status = SUCCESS
 		}
 		j.PerfTime = time.Now().Sub(j.TS)
@@ -85,8 +95,19 @@ func (j *Job) GetExecutor() (Executor, error) {
 	}
 }
 
-func (j *Job) RunOnFailure() {
-	for _, task := range j.OnFailure {
-		task.Run() // TODO now it runs sequentially, think about runing tasks in goroutines
+func (j *Job) LaunchTasks(class string) {
+    var tasks *[]Task
+    switch class {
+    case ON_FAILURE:
+        tasks = &j.OnFailure
+    case ON_RECOVERY:
+        tasks = &j.OnRecovery
+    default:
+        log.Fatalln("Unknown Task class: ", class)
+    }
+
+	for _, task := range *tasks {
+		task.Launch() // TODO now it runs sequentially, think about runing tasks in goroutines
 	}
 }
+
