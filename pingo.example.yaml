@@ -3,8 +3,18 @@
 # common variables for tasks
 # for now there are only variables for telegram, that are used within tasks
 variables: 
-  telegram_bot_token: ${{TELEGRAM_BOT_TOKEN}} # variables in ${{...}} are parsed from environment 
+  telegram_bot_token: ${{TELEGRAM_BOT_TOKEN}} # string variables in ${{...}} are parsed from environment 
   telegram_chat_id: 111111111
+
+  smtp_host: smtp.example.com
+  smtp_port: 425 # if not defined - 25 is default
+  smtp_username: smtp_admin # if username and password not defined - will try to proceed without authentication
+  smtp_password: ${{SMTP_PASSWORD}} 
+  smtp_from: pingo@example.com
+  smtp_recipients:
+    - cto@example.com
+    - sysadmins@example.com
+
 
 # list of jobs
 jobs:
@@ -15,7 +25,8 @@ jobs:
     interval: 10s # interval for a job. Expect string as for https://pkg.go.dev/time#ParseDuration 
     on_failure: # tasks to execute on failures
       - telegram-alert # send telegram message with bot token and chat from Variables
-    on_recovery: # tasks to execute on recovery (change job task from failed to success)
+      - email-alert # send email message with given email variables
+    on_recovery: # tasks to execute on recovery (change status task from failed to success)
       - telegram-alert
 
   local-memory-check:

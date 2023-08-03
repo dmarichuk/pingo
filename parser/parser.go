@@ -102,7 +102,6 @@ func ParseJob(name string, jobMap map[string]interface{}, vars *Variables) j.Job
 	if !hasOnRecovery {
 		rawOnRecovery = []interface{}{}
 	}
-
 	job.OnFailure = ParseTasks(rawOnFailure.([]interface{}), &job, vars, j.ON_FAILURE)
 	job.OnRecovery = ParseTasks(rawOnRecovery.([]interface{}), &job, vars, j.ON_RECOVERY)
 	return job
@@ -129,6 +128,37 @@ func ParseTasks(rawTasks []interface{}, job *j.Job, vars *Variables, class strin
 			tasks[idx] = task.NewTelegramTask(
 				vars.TelegramBotToken,
 				vars.TelegramChatID,
+				message,
+			)
+		case j.EMAIL_ALERT:
+			if ok := vars.IsValidForSMTP(); !ok {
+				log.Fatalf("Variables must include smtp_host and recipients!")
+			}
+			var message []byte
+			switch class {
+			case j.ON_FAILURE:
+				message = []byte(
+					fmt.Sprintf("Subject: [PINGO] Job %s has failed", job.Name) +
+						"\r\n" +
+						fmt.Sprintf("Job %s has failed.", job.Name) +
+						"\r\n")
+			case j.ON_RECOVERY:
+				message = []byte(
+					fmt.Sprintf("Subject: [PINGO] Job %s has recovered", job.Name) +
+						"\r\n" +
+						fmt.Sprintf("Job %s has recovered.", job.Name) +
+						"\r\n")
+			default:
+				log.Fatalf("Unknow Task class for job %s: %s", job.Name, class)
+			}
+			tasks[idx] = task.NewEmailTask(
+				vars.SmtpIdentity,
+				vars.SmtpUsername,
+				vars.SmtpPassword,
+				vars.SmtpHost,
+				vars.SmtpPort,
+				vars.SmtpFrom,
+				vars.SmtpTo,
 				message,
 			)
 		default:
