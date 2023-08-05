@@ -10,7 +10,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const DB_NAME = "/var/lib/pingo.db"
+const DB_NAME = "/var/lib/pingo/sqlite3.db"
 
 var (
 	DB *sql.DB

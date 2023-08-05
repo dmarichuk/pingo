@@ -1,8 +1,7 @@
-# example settings
+# example
 
-# common variables for tasks
-# for now there are only variables for telegram, that are used within tasks
-variables: 
+# settings for gloabl use
+settings: 
   telegram_bot_token: ${{TELEGRAM_BOT_TOKEN}} # string variables in ${{...}} are parsed from environment 
   telegram_chat_id: 111111111
 
@@ -19,13 +18,13 @@ variables:
 # list of jobs
 jobs:
 
-  an-important-service: # name of your job
-    type: service-ping # type of your job (now only service-ping, ram-usage and disk-usage are available)
+  an-important-service: # name of your job, used in alerts
+    type: endpoint-health # type of your job
     endpoint: http://192.168.0.1:9000/ping # endpoint, that is going to be requested for healthcheck
     interval: 10s # interval for a job. Expect string as for https://pkg.go.dev/time#ParseDuration 
     on_failure: # tasks to execute on failures
-      - telegram-alert # send telegram message with bot token and chat from Variables
-      - email-alert # send email message with given email variables
+      - telegram-alert # send telegram message with bot token and chat 
+      - email-alert # send email message 
     on_recovery: # tasks to execute on recovery (change status task from failed to success)
       - telegram-alert
 

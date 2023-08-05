@@ -17,7 +17,7 @@ var (
 )
 
 func init() {
-	pathToConfig = flag.String("config", "./pingo.yaml", "path to config")
+	pathToConfig = flag.String("config", "/var/lib/pingo/pingo.yaml", "path to config")
 }
 
 func main() {

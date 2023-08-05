@@ -8,9 +8,9 @@ import (
 
 const (
 	// job types
-	SERVICE_PING = "service-ping"
-	RAM_USAGE    = "ram-usage"
-	DISK_USAGE   = "disk-usage"
+	ENDPOING_HEALTH = "endpoint-health"
+	RAM_USAGE       = "ram-usage"
+	DISK_USAGE      = "disk-usage"
 
 	// task types
 	TELEGRAM_ALERT = "telegram-alert"
@@ -25,8 +25,9 @@ const (
 	FAILED  = "FAILED"
 )
 
-type Task interface {
-	Launch()
+type Alert interface {
+	Send([]byte)
+	GenerateMessage(*Job) []byte
 }
 
 type Executor interface {
@@ -37,13 +38,13 @@ type Job struct {
 	Name       string
 	Type       string
 	Interval   time.Duration
-	OnFailure  []Task
-	OnRecovery []Task
+	OnFailure  []Alert
+	OnRecovery []Alert
 	Status     string
 	TS         time.Time
 	PerfTime   time.Duration
 
-	// Service ping fields
+	// Endpoint health fields
 	Endpoint string
 
 	// RAM usage fields
@@ -55,7 +56,7 @@ type Job struct {
 }
 
 func (j *Job) Run() {
-	log.Printf("Launching %s job", j.Name)
+	log.Printf("[INFO] Launching %s job", j.Name)
 	e, err := j.GetExecutor()
 	if err != nil {
 		log.Fatalln(err)
@@ -64,28 +65,29 @@ func (j *Job) Run() {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		log.Printf("Running job %s", j.Name)
+		log.Printf("[INFO] Running job %s", j.Name)
 		j.TS = time.Now()
 		if ok := e.Exec(j); !ok {
-			log.Printf("Job %s failed", j.Name)
+			log.Printf("[INFO] Job %s failed", j.Name)
 			if j.Status != FAILED { // Launch on Failure task only if Job was not failed previously
-				go j.LaunchTasks(ON_FAILURE)
+				go j.SendAlerts(ON_FAILURE)
 			}
 			j.Status = FAILED
 		} else {
-			log.Printf("Job %s succeed", j.Name)
+			log.Printf("[INFO] Job %s succeed", j.Name)
 			if j.Status == FAILED { // Launch on Recovery task only if Job was failed previously
-				go j.LaunchTasks(ON_RECOVERY)
+				go j.SendAlerts(ON_RECOVERY)
 			}
 			j.Status = SUCCESS
 		}
 		j.PerfTime = time.Now().Sub(j.TS)
+		log.Printf("[INFO] Job %s performance time %d", j.PerfTime)
 	}
 }
 
 func (j *Job) GetExecutor() (Executor, error) {
 	switch j.Type {
-	case SERVICE_PING:
+	case ENDPOING_HEALTH:
 		return NewEndpointExecutor(), nil
 	case RAM_USAGE:
 		return NewMemoryUsageExecutor(j.RamThreshold), nil
@@ -96,18 +98,19 @@ func (j *Job) GetExecutor() (Executor, error) {
 	}
 }
 
-func (j *Job) LaunchTasks(class string) {
-	var tasks *[]Task
+func (j *Job) SendAlerts(class string) {
+	var alerts *[]Alert
 	switch class {
 	case ON_FAILURE:
-		tasks = &j.OnFailure
+		alerts = &j.OnFailure
 	case ON_RECOVERY:
-		tasks = &j.OnRecovery
+		alerts = &j.OnRecovery
 	default:
-		log.Fatalln("Unknown Task class: ", class)
+		log.Fatalln("[ERR] Unknown Task class: ", class)
 	}
 
-	for _, task := range *tasks {
-		task.Launch() // TODO now it runs sequentially, think about runing tasks in goroutines
+	for _, alert := range *alerts {
+		message := alert.GenerateMessage(j)
+		alert.Send(message) // TODO now it runs sequentially, think about runing tasks in goroutines
 	}
 }
