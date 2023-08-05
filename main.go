@@ -3,11 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
+	db "pingo/database"
 	"pingo/parser"
 	"syscall"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var (
@@ -22,15 +24,12 @@ func main() {
 	flag.Parse()
 	parser.YamlConfig.ReadFromFile(*pathToConfig)
 	jobs := parser.YamlConfig.Parse()
-
-	log.Println("JOBS: ", jobs)
-
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	done := make(chan bool, 1)
+	defer db.DB.Close()
 
 	for i := 0; i < len(jobs); i++ {
-		log.Println("Current job", jobs[i].Name)
 		go jobs[i].Run()
 	}
 
