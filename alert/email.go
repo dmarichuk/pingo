@@ -37,7 +37,7 @@ func (a *EmailAlert) Send(msg string) {
 	email := fmt.Sprintf("From: %s\r\n", a.From)
 	email += fmt.Sprintf("Subject: Pingo Alert!\r\n")
 	email += fmt.Sprintf("\r\n%s\r\n", msg)
-	err := smtp.SendMail(a.Host+":"+a.Port, a.Auth, a.From, a.To, []byte(msg))
+	err := smtp.SendMail(a.Host+":"+a.Port, a.Auth, a.From, a.To, []byte(email))
 	if err != nil {
 		log.Println(err)
 	}
