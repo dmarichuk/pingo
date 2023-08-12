@@ -1,7 +1,7 @@
 package job
 
 import (
-	"log"
+	"fmt"
 	"syscall"
 )
 
@@ -19,11 +19,21 @@ func NewDiskUsageExecutor(path string, threshold float64) *DiskUsageExecutor {
 	}
 }
 
-func (e *DiskUsageExecutor) Exec(j *Job) bool {
+func (e *DiskUsageExecutor) Exec(j *Job) (bool, string) {
+	var msg string
+
 	if err := syscall.Statfs(e.Path, e.info); err != nil {
-		log.Println("[ERR] Couldn't access stat fs: ", err)
-		return false
+		msg = fmt.Sprintf("Couldn't access stat fs: %s", err.Error())
+		return false, msg
 	}
-	ratio := 1.0 - float64(e.info.Bfree*uint64(e.info.Bsize))/float64(e.info.Blocks*uint64(e.info.Bsize))
-	return ratio < e.Threshold
+
+	freeDisk := float64(e.info.Bfree * uint64(e.info.Bsize))
+	totalDisk := float64(e.info.Blocks * uint64(e.info.Bsize))
+	ratio := 1.0 - freeDisk/totalDisk
+
+	ok := ratio < e.Threshold
+	if !ok {
+		msg = fmt.Sprintf("Disk usage exceeded threshold %.2f for %s\nFree Disk: %.2f\nTotal Disk: %.2f", e.Threshold, j.Name, freeDisk, totalDisk)
+	}
+	return ok, msg
 }

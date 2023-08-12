@@ -20,7 +20,7 @@ jobs:
 
   an-important-service: # name of your job, used in alerts
     type: endpoint-health # type of your job
-    endpoint: http://192.168.0.1:9000/ping # endpoint, that is going to be requested for healthcheck
+    endpoint: https://important.example.org/ping # endpoint, that is going to be requested for healthcheck
     interval: 10s # interval for a job. Expect string as for https://pkg.go.dev/time#ParseDuration 
     on_failure: # tasks to execute on failures
       - telegram-alert # send telegram message with bot token and chat 

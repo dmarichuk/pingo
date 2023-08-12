@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"pingo/job"
-	"time"
 )
 
 var TgClient *http.Client
@@ -28,13 +26,13 @@ func NewTelegramAlert(token, chatID string) *TelegramAlert {
 	}
 }
 
-func (a *TelegramAlert) Send(msg []byte) {
+func (a *TelegramAlert) Send(msg string) {
 	data := struct {
 		ChatID string `json:"chat_id"`
 		Text   string `json:"text"`
 	}{
 		ChatID: a.ChatID,
-		Text:   string(msg),
+		Text:   msg,
 	}
 
 	jsonData, err := json.Marshal(data)
@@ -63,8 +61,4 @@ func (a *TelegramAlert) Send(msg []byte) {
 		log.Print("[ERR] Error sending telegram message:", resp.StatusCode)
 	}
 
-}
-
-func (a *TelegramAlert) GenerateMessage(j *job.Job) []byte {
-	return []byte(fmt.Sprintf("Job %s; Status %s; Time %s", j.Name, j.Status, j.TS.Format(time.RFC3339)))
 }

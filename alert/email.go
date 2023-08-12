@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/smtp"
-	"pingo/job"
-	"time"
 )
 
 type EmailAlert struct {
@@ -35,16 +33,12 @@ func NewEmailAlert(identity, username, password, host, port, from string, to []s
 	return &t
 }
 
-func (a *EmailAlert) Send(msg []byte) {
-	err := smtp.SendMail(a.Host+":"+a.Port, a.Auth, a.From, a.To, msg)
+func (a *EmailAlert) Send(msg string) {
+	email := fmt.Sprintf("From: %s\r\n", a.From)
+	email += fmt.Sprintf("Subject: Pingo Alert!\r\n")
+	email += fmt.Sprintf("\r\n%s\r\n", msg)
+	err := smtp.SendMail(a.Host+":"+a.Port, a.Auth, a.From, a.To, []byte(msg))
 	if err != nil {
 		log.Println(err)
 	}
-}
-
-func (a *EmailAlert) GenerateMessage(j *job.Job) []byte {
-	msg := fmt.Sprintf("From: %s\r\n", a.From)
-	msg += fmt.Sprintf("Subject: %s\r\n", fmt.Sprintf("Job %s changed status to %s!", j.Name, j.Status))
-	msg += fmt.Sprintf("\r\n%s\r\n", fmt.Sprintf("Job %s; Status: %s; Time: %s", j.Name, j.Status, j.TS.Format(time.RFC3339)))
-	return []byte(msg)
 }

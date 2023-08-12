@@ -1,8 +1,10 @@
 package job
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
+	db "pingo/database"
 	"time"
 )
 
@@ -26,12 +28,11 @@ const (
 )
 
 type Alert interface {
-	Send([]byte)
-	GenerateMessage(*Job) []byte
+	Send(string)
 }
 
 type Executor interface {
-	Exec(*Job) bool
+	Exec(*Job) (bool, string)
 }
 
 type Job struct {
@@ -43,6 +44,7 @@ type Job struct {
 	Status     string
 	TS         time.Time
 	PerfTime   time.Duration
+	Message    string
 
 	// Endpoint health fields
 	Endpoint string
@@ -67,22 +69,53 @@ func (j *Job) Run() {
 	for range ticker.C {
 		log.Printf("[INFO] Running job %s", j.Name)
 		j.TS = time.Now()
-		if ok := e.Exec(j); !ok {
-			log.Printf("[INFO] Job %s failed", j.Name)
+		if ok, msg := e.Exec(j); !ok {
+			log.Printf("[INFO] Job %s failed. Message: %s", j.Name, msg)
 			if j.Status != FAILED { // Launch on Failure task only if Job was not failed previously
-				go j.SendAlerts(ON_FAILURE)
+				go j.SendAlerts(ON_FAILURE, msg)
 			}
 			j.Status = FAILED
+			j.Message = msg
 		} else {
-			log.Printf("[INFO] Job %s succeed", j.Name)
+			log.Printf("[INFO] Job %s succeed. Message: %s", j.Name, msg)
 			if j.Status == FAILED { // Launch on Recovery task only if Job was failed previously
-				go j.SendAlerts(ON_RECOVERY)
+				go j.SendAlerts(ON_RECOVERY, fmt.Sprintf("Job %s recovered!", j.Name))
 			}
 			j.Status = SUCCESS
+			j.Message = msg
 		}
 		j.PerfTime = time.Now().Sub(j.TS)
-		log.Printf("[INFO] Job %s performance time %d", j.PerfTime)
+		log.Printf("[INFO] Job %s performance time %d", j.Name, j.PerfTime)
+		err = j.DumpLogToDB(db.DB)
+		if err != nil {
+			log.Println(err)
+		}
 	}
+}
+
+func (j *Job) DumpToDB(db *sql.DB) error {
+	sqlStmt := `
+	INSERT INTO jobs (
+		name, type, endpoint, ram_threshold, disk_threshold, disk_path
+	) VALUES (
+		?, ?, ?, ?, ?, ?
+	)
+	`
+	_, err := db.Exec(sqlStmt, j.Name, j.Type, j.Endpoint, j.RamThreshold, j.DiskThreshold, j.DiskPath)
+	return err
+}
+
+func (j *Job) DumpLogToDB(db *sql.DB) error {
+	sqlStmt := `
+	INSERT INTO job_logs (
+		job, ts, status, perf_time, message
+	) VALUES (
+		?, ?, ?, ?, ? 
+	)
+	`
+	_, err := db.Exec(sqlStmt, j.Name, j.TS.Format(time.DateTime), j.Status, j.PerfTime.Seconds(), j.Message)
+	return err
+
 }
 
 func (j *Job) GetExecutor() (Executor, error) {
@@ -98,7 +131,7 @@ func (j *Job) GetExecutor() (Executor, error) {
 	}
 }
 
-func (j *Job) SendAlerts(class string) {
+func (j *Job) SendAlerts(class, msg string) {
 	var alerts *[]Alert
 	switch class {
 	case ON_FAILURE:
@@ -110,7 +143,6 @@ func (j *Job) SendAlerts(class string) {
 	}
 
 	for _, alert := range *alerts {
-		message := alert.GenerateMessage(j)
-		alert.Send(message) // TODO now it runs sequentially, think about runing tasks in goroutines
+		alert.Send(msg) // TODO now it runs sequentially, think about runing tasks in goroutines
 	}
 }

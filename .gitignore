@@ -8,9 +8,8 @@
 *.dll
 *.so
 *.dylib
+pingo
 
-!*.*
-!*/
 # Test binary, built with `go test -c`
 *.test
 
@@ -23,3 +22,5 @@
 # Go workspace file
 go.work
 
+test/
+.DS_Store
