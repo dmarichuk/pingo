@@ -1,7 +1,7 @@
 package job
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -18,14 +18,19 @@ func NewEndpointExecutor() *EndpointExecutor {
 	}
 }
 
-func (e *EndpointExecutor) Exec(j *Job) bool {
+func (e *EndpointExecutor) Exec(j *Job) (bool, string) {
+	var msg string
 
 	resp, err := e.Client.Get(j.Endpoint)
 	if err != nil {
-		log.Printf("Endpoint ping to %s is failed: ", err)
-		return false
+		msg = fmt.Sprintf("Endpoint health check for job %s with %s is failed: %s", j.Name, j.Endpoint, err.Error())
+		return false, msg
 	}
 	defer resp.Body.Close()
-	return true
-}
 
+	ok := resp.StatusCode == http.StatusOK
+	if !ok {
+		msg = fmt.Sprintf("Endpoint health check for job %s with %s is failed. Status code: %d", j.Name, j.Endpoint, resp.StatusCode)
+	}
+	return ok, msg
+}

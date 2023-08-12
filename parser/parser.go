@@ -1,11 +1,10 @@
 package parser
 
 import (
-	"fmt"
 	"log"
 	"os"
+	"pingo/alert"
 	j "pingo/job"
-	"pingo/task"
 	"time"
 
 	"gopkg.in/yaml.v2"
@@ -14,8 +13,8 @@ import (
 var YamlConfig Config
 
 type Config struct {
-	Variables Variables                         `yaml:"variables"`
-	Jobs      map[string]map[string]interface{} `yaml:"jobs,flow"`
+	Settings Settings                          `yaml:"settings"`
+	Jobs     map[string]map[string]interface{} `yaml:"jobs,flow"`
 }
 
 func (c *Config) ReadFromFile(path string) {
@@ -31,19 +30,18 @@ func (c *Config) ReadFromFile(path string) {
 }
 
 func (c *Config) Parse() []j.Job {
-	c.Variables.PostParse()
+	c.Settings.PostParse()
 
 	jobs := make([]j.Job, len(c.Jobs))
 	idx := 0
 	for k, v := range c.Jobs {
-		jobs[idx] = ParseJob(k, v, &c.Variables)
+		jobs[idx] = c.ParseJob(k, v)
 		idx += 1
 	}
 	return jobs
-
 }
 
-func ParseJob(name string, jobMap map[string]interface{}, vars *Variables) j.Job {
+func (c *Config) ParseJob(name string, jobMap map[string]interface{}) j.Job {
 	job := j.Job{Name: name}
 
 	interval, hasInterval := jobMap["interval"]
@@ -63,7 +61,7 @@ func ParseJob(name string, jobMap map[string]interface{}, vars *Variables) j.Job
 	job.Type = jobType.(string)
 
 	switch job.Type {
-	case j.SERVICE_PING:
+	case j.ENDPOING_HEALTH:
 		endpoint, hasEndpoint := jobMap["endpoint"]
 		if !hasEndpoint {
 			log.Fatalf("Job %s must include endpoint!", name)
@@ -102,68 +100,42 @@ func ParseJob(name string, jobMap map[string]interface{}, vars *Variables) j.Job
 	if !hasOnRecovery {
 		rawOnRecovery = []interface{}{}
 	}
-	job.OnFailure = ParseTasks(rawOnFailure.([]interface{}), &job, vars, j.ON_FAILURE)
-	job.OnRecovery = ParseTasks(rawOnRecovery.([]interface{}), &job, vars, j.ON_RECOVERY)
+	job.OnFailure = c.ParseAlerts(rawOnFailure.([]interface{}))
+	job.OnRecovery = c.ParseAlerts(rawOnRecovery.([]interface{}))
 	return job
 }
 
-func ParseTasks(rawTasks []interface{}, job *j.Job, vars *Variables, class string) []j.Task {
-	parsedTasks := TransformISliceToStrSlice(rawTasks)
-	tasks := make([]j.Task, len(parsedTasks))
-	for idx, t := range parsedTasks {
+func (c *Config) ParseAlerts(rawAlerts []interface{}) []j.Alert {
+	parsedAlerts := TransformISliceToStrSlice(rawAlerts)
+	alerts := make([]j.Alert, len(parsedAlerts))
+	var buffAlert j.Alert
+	for idx, t := range parsedAlerts {
 		switch t {
 		case j.TELEGRAM_ALERT:
-			if ok := vars.IsValidForTelegram(); !ok {
+			if ok := c.Settings.IsValidForTelegram(); !ok {
 				log.Fatalf("Variables must include telegram_bot_token and telegram_chat_id!")
 			}
-			var message string
-			switch class {
-			case j.ON_FAILURE:
-				message = fmt.Sprintf("Job %s has failed", job.Name)
-			case j.ON_RECOVERY:
-				message = fmt.Sprintf("Job %s has recovered", job.Name)
-			default:
-				log.Fatalf("Unknow Task class for job %s: %s", job.Name, class)
-			}
-			tasks[idx] = task.NewTelegramTask(
-				vars.TelegramBotToken,
-				vars.TelegramChatID,
-				message,
+			buffAlert = alert.NewTelegramAlert(
+				c.Settings.TelegramBotToken,
+				c.Settings.TelegramChatID,
 			)
 		case j.EMAIL_ALERT:
-			if ok := vars.IsValidForSMTP(); !ok {
+			if ok := c.Settings.IsValidForSMTP(); !ok {
 				log.Fatalf("Variables must include smtp_host and recipients!")
 			}
-			var message []byte
-			switch class {
-			case j.ON_FAILURE:
-				message = []byte(
-					fmt.Sprintf("Subject: [PINGO] Job %s has failed", job.Name) +
-						"\r\n" +
-						fmt.Sprintf("Job %s has failed.", job.Name) +
-						"\r\n")
-			case j.ON_RECOVERY:
-				message = []byte(
-					fmt.Sprintf("Subject: [PINGO] Job %s has recovered", job.Name) +
-						"\r\n" +
-						fmt.Sprintf("Job %s has recovered.", job.Name) +
-						"\r\n")
-			default:
-				log.Fatalf("Unknow Task class for job %s: %s", job.Name, class)
-			}
-			tasks[idx] = task.NewEmailTask(
-				vars.SmtpIdentity,
-				vars.SmtpUsername,
-				vars.SmtpPassword,
-				vars.SmtpHost,
-				vars.SmtpPort,
-				vars.SmtpFrom,
-				vars.SmtpTo,
-				message,
+			buffAlert = alert.NewEmailAlert(
+				c.Settings.SmtpIdentity,
+				c.Settings.SmtpUsername,
+				c.Settings.SmtpPassword,
+				c.Settings.SmtpHost,
+				c.Settings.SmtpPort,
+				c.Settings.SmtpFrom,
+				c.Settings.SmtpTo,
 			)
 		default:
-			log.Fatalf("Unknow task type in job %s: %s", job.Name, t)
+			log.Fatalf("Unknow task type: %s", t)
 		}
+		alerts[idx] = buffAlert
 	}
-	return tasks
+	return alerts
 }

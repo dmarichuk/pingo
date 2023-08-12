@@ -1,0 +1,40 @@
+{{ define "base" }}
+<!doctype html>
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>{{ .Title }} | Pingo</title>
+        <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+        <link href="/static/styles.css" rel="stylesheet">
+    </head>
+
+<body>
+     <header class="header">
+        <div class="header__left">
+            <div class="header__left__icon">
+                Pingo
+            </div>
+            <div class="header__right__title">
+            </div>
+        </div>
+        <div class="header__right"></div>
+    </header>
+
+    <main>
+        {{ template "content" }}
+    </main>
+
+    <footer>
+        <small>
+            Source: <a href="https://github.com/dmarichuk/pingo">dmarichuk/pingo</a>
+        </small>
+    </footer>
+</body>
+
+<script src="/static/htmx.min.js"></script>
+
+</html>
+{{ end }}

@@ -1,0 +1,4 @@
+.git/
+pingo
+*.md
+Dockerfile
