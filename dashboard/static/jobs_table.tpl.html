@@ -1,0 +1,30 @@
+{{ define "content" }}
+<table>
+    <thead>
+        <tr>
+            <th>Status</th>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Target</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range jobsInfo }}
+        <tr>
+            <td 
+                hx-get="/status/{{.Name}}"
+                hx-trigger="every 2s"
+                hx-swap="innerHTML"
+            ></td>
+            <td>
+                <a href="/jobs/{{.Name}}">{{.Name}}</a>
+            </td>
+            <td>{{ mapType .}}</td>
+            <td>
+                {{ mapTarget . }}
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{ end }}

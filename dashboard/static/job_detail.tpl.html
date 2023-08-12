@@ -1,0 +1,15 @@
+{{ define "content" }}
+<div class="job-charts">
+    <div
+        hx-get="/latest/{{JobName}}"
+        hx-trigger="load"
+        hx-swap="innerHTML">
+    </div>
+    <div 
+        hx-get="/statistics/{{JobName}}"
+        hx-trigger="load"
+        hx-swap="innerHTML">
+    </div>
+</div>
+<script src="/static/echarts.min.js"></script>
+{{ end }}
