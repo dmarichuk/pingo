@@ -34,7 +34,6 @@ func getLineXAxisItems(data *[]db.DBJobLog) []string {
 
 func getPieItems(data *[]db.DBPieJob) []opts.PieData {
 	items := make([]opts.PieData, len(*data))
-	var idx int
 	for i, v := range *data {
 		items[i] = opts.PieData{Name: strings.ToTitle(v.Status), Value: v.Count}
 	}
