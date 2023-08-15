@@ -2,8 +2,10 @@
 ## Simple yaml-configured service to ping other services and notify if anything goes wrong
 
 # TODO
+- Multiple telegram chats
 - ICMP check 
 - CPU check
+- Groups for jobs
 - Asserts for the jobs
 - Tests
 - Dockerhub image
