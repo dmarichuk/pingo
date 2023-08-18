@@ -107,35 +107,41 @@ func (c *Config) ParseJob(name string, jobMap map[string]interface{}) j.Job {
 
 func (c *Config) ParseAlerts(rawAlerts []interface{}) []j.Alert {
 	parsedAlerts := TransformISliceToStrSlice(rawAlerts)
-	alerts := make([]j.Alert, len(parsedAlerts))
-	var buffAlert j.Alert
-	for idx, t := range parsedAlerts {
+	var alerts []j.Alert
+	for _, t := range parsedAlerts {
 		switch t {
 		case j.TELEGRAM_ALERT:
 			if ok := c.Settings.IsValidForTelegram(); !ok {
-				log.Fatalf("Variables must include telegram_bot_token and telegram_chat_id!")
+				log.Fatalf("Settings must include telegram_bot_token and telegram_chats!")
 			}
-			buffAlert = alert.NewTelegramAlert(
-				c.Settings.TelegramBotToken,
-				c.Settings.TelegramChatID,
-			)
+			for _, chat := range c.Settings.TelegramChats {
+				alerts = append(
+					alerts,
+					alert.NewTelegramAlert(
+						c.Settings.TelegramBotToken,
+						chat,
+					),
+				)
+			}
 		case j.EMAIL_ALERT:
 			if ok := c.Settings.IsValidForSMTP(); !ok {
 				log.Fatalf("Variables must include smtp_host and recipients!")
 			}
-			buffAlert = alert.NewEmailAlert(
-				c.Settings.SmtpIdentity,
-				c.Settings.SmtpUsername,
-				c.Settings.SmtpPassword,
-				c.Settings.SmtpHost,
-				c.Settings.SmtpPort,
-				c.Settings.SmtpFrom,
-				c.Settings.SmtpTo,
+			alerts = append(
+				alerts,
+				alert.NewEmailAlert(
+					c.Settings.SmtpIdentity,
+					c.Settings.SmtpUsername,
+					c.Settings.SmtpPassword,
+					c.Settings.SmtpHost,
+					c.Settings.SmtpPort,
+					c.Settings.SmtpFrom,
+					c.Settings.SmtpTo,
+				),
 			)
 		default:
 			log.Fatalf("Unknow task type: %s", t)
 		}
-		alerts[idx] = buffAlert
 	}
 	return alerts
 }
