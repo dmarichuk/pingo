@@ -9,8 +9,8 @@ import (
 
 type Settings struct {
 	// Telegram
-	TelegramBotToken string `yaml:"telegram_bot_token,omitempty"`
-	TelegramChatID   string `yaml:"telegram_chat_id,omitempty"`
+	TelegramBotToken string   `yaml:"telegram_bot_token,omitempty"`
+	TelegramChats    []string `yaml:"telegram_chats,omitempty"`
 
 	// SMTP
 	SmtpIdentity string   `yaml:"smtp_identity,omitempty"`
@@ -46,9 +46,9 @@ func (s *Settings) PostParse() {
 }
 
 func (s *Settings) IsValidForTelegram() bool {
-	return s.TelegramBotToken != "" && s.TelegramChatID != ""
+	return s.TelegramBotToken != "" && len(s.TelegramChats) > 0
 }
 
 func (s *Settings) IsValidForSMTP() bool {
-	return s.SmtpHost != "" && len(s.SmtpTo) != 0
+	return s.SmtpHost != "" && len(s.SmtpTo) > 0
 }
