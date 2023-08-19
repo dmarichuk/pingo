@@ -45,6 +45,7 @@ type Job struct {
 	TS         time.Time
 	PerfTime   time.Duration
 	Message    string
+	Group      string
 
 	// Endpoint health fields
 	Endpoint string
@@ -96,12 +97,12 @@ func (j *Job) Run() {
 func (j *Job) DumpToDB(db *sql.DB) error {
 	sqlStmt := `
 	INSERT INTO jobs (
-		name, type, endpoint, ram_threshold, disk_threshold, disk_path
+		name, type, job_group, endpoint, ram_threshold, disk_threshold, disk_path
 	) VALUES (
-		?, ?, ?, ?, ?, ?
+		?, ?, ?, ?, ?, ?, ?
 	)
 	`
-	_, err := db.Exec(sqlStmt, j.Name, j.Type, j.Endpoint, j.RamThreshold, j.DiskThreshold, j.DiskPath)
+	_, err := db.Exec(sqlStmt, j.Name, j.Type, j.Group, j.Endpoint, j.RamThreshold, j.DiskThreshold, j.DiskPath)
 	return err
 }
 

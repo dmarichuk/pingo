@@ -60,6 +60,12 @@ func (c *Config) ParseJob(name string, jobMap map[string]interface{}) j.Job {
 	}
 	job.Type = jobType.(string)
 
+	jobGroup, hasGroup := jobMap["group"]
+	if !hasGroup {
+		jobGroup = "default"
+	}
+	job.Group = jobGroup.(string)
+
 	switch job.Type {
 	case j.ENDPOING_HEALTH:
 		endpoint, hasEndpoint := jobMap["endpoint"]
@@ -100,6 +106,7 @@ func (c *Config) ParseJob(name string, jobMap map[string]interface{}) j.Job {
 	if !hasOnRecovery {
 		rawOnRecovery = []interface{}{}
 	}
+
 	job.OnFailure = c.ParseAlerts(rawOnFailure.([]interface{}))
 	job.OnRecovery = c.ParseAlerts(rawOnRecovery.([]interface{}))
 	return job
