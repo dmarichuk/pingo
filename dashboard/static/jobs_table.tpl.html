@@ -13,7 +13,7 @@
         <tr>
             <td 
                 hx-get="/status/{{.Name}}"
-                hx-trigger="every 2s"
+                hx-trigger="load, every 10s"
                 hx-swap="innerHTML"
             ></td>
             <td>
