@@ -3,7 +3,9 @@
 # settings for gloabl use
 settings: 
   telegram_bot_token: ${{TELEGRAM_BOT_TOKEN}} # string variables in ${{...}} are parsed from environment 
-  telegram_chat_id: 111111111
+  telegram_chats:
+    - 111111111
+    - "-12345678"
 
   smtp_host: smtp.example.com
   smtp_port: 425 # if not defined - 25 is default
@@ -20,6 +22,7 @@ jobs:
 
   an-important-service: # name of your job, used in alerts
     type: endpoint-health # type of your job
+    group: production   # jobs are ordered by group
     endpoint: https://important.example.org/ping # endpoint, that is going to be requested for healthcheck
     interval: 10s # interval for a job. Expect string as for https://pkg.go.dev/time#ParseDuration 
     on_failure: # tasks to execute on failures
@@ -30,6 +33,7 @@ jobs:
 
   local-memory-check:
     type: ram-usage # check current ram usage
+    group: local
     threshold: 0.9 # threshold for failing - current ram usage / total ram usage
     interval: 10s
     on_failure:

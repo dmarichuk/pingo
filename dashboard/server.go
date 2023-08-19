@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	db "pingo/database"
@@ -119,6 +120,7 @@ func init() {
 	Mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
+			fmt.Println(db.SelectJobsInfo(db.DB))
 			tmpl, err := template.New("").
 				Funcs(
 					template.FuncMap{

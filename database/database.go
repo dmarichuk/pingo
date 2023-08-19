@@ -36,6 +36,7 @@ type DBJob struct {
 	Id            int     `json:"id,omitempty"`
 	Name          string  `json:"name,omitempty"`
 	Type          string  `json:"type,omitempty"`
+	Group         string  `json:"group,omitempty"`
 	Endpoint      string  `json:"endpoint,omitempty"`
 	RamThreshold  float64 `json:"ram_threshold,omitempty"`
 	DiskThreshold float64 `json:"disk_threshold,omitempty"`
@@ -62,6 +63,7 @@ func CreateJobTable(db *sql.DB) error {
 		id INTEGER PRIMARY KEY,
 		name TEXT,
 		type TEXT,
+		job_group TEXT,
 		endpoint TEXT,
 		ram_threshold REAL,
 		disk_threshold REAL,
@@ -74,7 +76,7 @@ func CreateJobTable(db *sql.DB) error {
 	}
 
 	sqlStmt = `
-	CREATE UNIQUE INDEX IF NOT EXISTS name_unique_idx ON jobs (name)
+	CREATE UNIQUE INDEX IF NOT EXISTS name_unique_idx ON jobs (name);
 	`
 	_, err = db.Exec(sqlStmt)
 	return err
@@ -167,9 +169,9 @@ func SelectJobsForPieChart(db *sql.DB, name string) ([]DBPieJob, error) {
 func SelectJobsInfo(db *sql.DB) ([]DBJob, error) {
 	var result []DBJob
 	sqlStmt := `
-	SELECT id, name, type, endpoint, ram_threshold, disk_threshold, disk_path
+	SELECT id, name, type, job_group, endpoint, ram_threshold, disk_threshold, disk_path
 	FROM jobs
-	ORDER BY id
+	ORDER BY job_group ASC, id ASC
 	`
 	rows, err := db.Query(sqlStmt)
 	if err != nil {
@@ -180,7 +182,7 @@ func SelectJobsInfo(db *sql.DB) ([]DBJob, error) {
 	for rows.Next() {
 
 		var j DBJob
-		err = rows.Scan(&j.Id, &j.Name, &j.Type, &j.Endpoint, &j.RamThreshold, &j.DiskThreshold, &j.DiskPath)
+		err = rows.Scan(&j.Id, &j.Name, &j.Type, &j.Group, &j.Endpoint, &j.RamThreshold, &j.DiskThreshold, &j.DiskPath)
 		if err != nil {
 			return result, err
 

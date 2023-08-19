@@ -4,6 +4,7 @@
         <tr>
             <th>Status</th>
             <th>Name</th>
+            <th>Group</th>
             <th>Type</th>
             <th>Target</th>
         </tr>
@@ -19,6 +20,7 @@
             <td>
                 <a href="/jobs/{{.Name}}">{{.Name}}</a>
             </td>
+            <td>{{ .Group }}</td>
             <td>{{ mapType .}}</td>
             <td>
                 {{ mapTarget . }}
